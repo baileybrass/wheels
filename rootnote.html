@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bailey Brass Studio - Upright Root Note Picker</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none; /* Prevents text selection highlighting while dragging */
+        }
+        .wheel-container {
+            position: relative;
+            width: 540px;
+            height: 540px;
+            margin-bottom: 25px;
+            margin-top: 40px; 
+        }
+        
+        /* Custom Trumpet Shape Vector Pointer */
+        .trumpet-pointer {
+            position: absolute;
+            top: -45px; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 55px;
+            z-index: 20; /* Layered above text overlay track */
+            filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
+        .trumpet-bell {
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 30px solid #eab308; /* Brass Gold */
+        }
+        .trumpet-body {
+            width: 8px;
+            height: 18px;
+            background-color: #eab308;
+            margin-top: -2px;
+            position: relative;
+        }
+        .trumpet-valves {
+            position: absolute;
+            top: -5px;
+            left: -4px;
+            width: 16px;
+            height: 4px;
+            background-color: #ca8a04;
+            border-radius: 2px;
+        }
+        
+        /* Rotating structural container holding BOTH canvas background and dynamic text labels */
+        .rotating-wheel-wrapper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            border-radius: 50%;
+            box-shadow: 0 0 35px rgba(0, 0, 0, 0.8), 0 0 15px rgba(37, 99, 235, 0.2);
+            cursor: grab;
+            transition: transform 5s cubic-bezier(0.1, 0.8, 0.2, 1);
+        }
+        .rotating-wheel-wrapper:active {
+            cursor: grabbing;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Upright Floating Text Overlay Layer Track */
+        .labels-overlay-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+        
+        /* Individual responsive label wrappers */
+        .wheel-label-slot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100px; /* Widened slightly to accommodate larger lettering layout */
+            height: 40px;
+            margin-left: -50px;
+            margin-top: -20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: center center;
+        }
+        
+        /* Inner text node with enlarged font size and crisp visibility rendering */
+        .upright-text-node {
+            font-size: 25px; /* Increased font from 16px to 25px */
+            font-weight: 800; /* Extra bold weighting style */
+            letter-spacing: 0.5px;
+            text-shadow: none; 
+            transition: transform 5s cubic-bezier(0.1, 0.8, 0.2, 1); 
+            white-space: nowrap;
+        }
+        
+        /* Interactive Hover Mode Enhancements */
+        .wheel-container:hover .rotating-wheel-wrapper {
+            box-shadow: 0 0 40px rgba(37, 99, 235, 0.4), 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        
+        .center-hub {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90px;
+            height: 90px;
+            background: radial-gradient(circle, #2d2d2d, #141414);
+            border: 4px solid #ffffff; 
+            border-radius: 50%;
+            z-index: 5;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .hub-logo-img {
+            width: 85%;
+            height: 85%;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+        .spin-btn {
+            background: linear-gradient(45deg, #1e1b4b, #2563eb, #111827); 
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            padding: 14px 45px;
+            font-size: 22px;
+            font-weight: 900;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+        .spin-btn:hover {
+            box-shadow: 0 6px 22px rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .spin-btn:active {
+            transform: scale(0.96);
+        }
+        
+        #resultBox {
+            margin-top: 20px;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        #result {
+            font-size: 32px; 
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+            margin: 0;
+        }
+        #fifthsInfo {
+            font-size: 18px;
+            color: #2563eb; 
+            font-weight: bold;
+            margin-top: 5px;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wheel-container">
+        <div class="trumpet-pointer">
+            <div class="trumpet-body">
+                <div class="trumpet-valves"></div>
+            </div>
+            <div class="trumpet-bell"></div>
+        </div>
+        
+        <div class="center-hub">
+            <img src="logo.png" alt="Bailey Brass Hub Logo" class="hub-logo-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://w3.org viewBox=%220 0 100 100%22><text y=%220.9em%22 font-size=%2290%22>🎺</text></svg>';">
+        </div>
+        
+        <!-- Rotating unified bundle module container -->
+        <div id="wheelWrapper" class="rotating-wheel-wrapper">
+            <canvas id="wheel" width="540" height="540"></canvas>
+            <div id="labelsContainer" class="labels-overlay-container"></div>
+        </div>
+    </div>
+
+    <button class="spin-btn" id="spinBtn">Pick Root Key</button>
+    
+    <div id="resultBox">
+        <div id="result">Ready for Stream</div>
+        <div id="formula"></div>
+    </div>
+
+    <script>
+        const keysList = [
+            "C", "G", "D", "A", "E", "B", "F♯/G♭", "D♭", "A♭", "E♭", "B♭", "F"
+        ];
+
+        const relativeMinorDictionary = {
+            "C": "A minor", "G": "E minor", "D": "B minor", "A": "F♯ minor", 
+            "E": "C♯ minor", "B": "G♯ minor", "F♯/G♭": "D♯ minor", "D♭": "B♭ minor", 
+            "A♭": "F minor", "E♭": "C minor", "B♭": "G minor", "F": "D minor"
+        };
+
+        const wrapper = document.getElementById("wheelWrapper");
+        const canvas = document.getElementById("wheel");
+        const ctx = canvas.getContext("2d");
+        const labelsContainer = document.getElementById("labelsContainer");
+        const spinBtn = document.getElementById("spinBtn");
+        const resultDiv = document.getElementById("result");
+        const fifthsInfoDiv = document.getElementById("formula"); // Maps into standard output layout track safely
+
+        const numSegments = keysList.length;
+        const segmentAngle = (2 * Math.PI) / numSegments;
+        
+        let currentRotationDegrees = 0; 
+        let isSpinning = false;
+        let isDragging = false;
+        let currentAngleOffsetDegrees = 0;
+        function getSliceStyle(index) {
+            const pattern = index % 3;
+            if (pattern === 0) return { bg: "#0f172a", text: "#ffffff" }; 
+            if (pattern === 1) return { bg: "#ffffff", text: "#000000" }; 
+            return { bg: "#2563eb", text: "#ffffff" }; 
+        }
+
+        // Draw background colored wedges on canvas (with no text)
+        function drawWheel() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const radius = canvas.width / 2;
+
+            for (let i = 0; i < numSegments; i++) {
+                const angle = (i * segmentAngle) - (Math.PI / 2);
+                const style = getSliceStyle(i);
+                
+                ctx.beginPath();
+                ctx.fillStyle = style.bg;
+                ctx.moveTo(radius, radius);
+                ctx.arc(radius, radius, radius, angle, angle + segmentAngle);
+                ctx.lineTo(radius, radius);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.strokeStyle = "#121212";
+                ctx.lineWidth = 1.5;
+                ctx.moveTo(radius, radius);
+                ctx.lineTo(radius + radius * Math.cos(angle), radius + radius * Math.sin(angle));
+                ctx.stroke();
+            }
+
+            ctx.beginPath();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 4;
+            ctx.arc(radius, radius, radius - 2, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+
+        // Generate DOM labels and position them radially near the top edge of the wedges
+        function createDOMTextLabels() {
+            labelsContainer.innerHTML = "";
+            // Increased to 190 to push the larger text outward near the perimeter rim
+            const radiusOffset = 190; 
+
+            for (let i = 0; i < numSegments; i++) {
+                // Calculate position angle matching midpoints of wedges
+                const angleRad = (i * segmentAngle) - (Math.PI / 2) + (segmentAngle / 2);
+                
+                const x = radiusOffset * Math.cos(angleRad);
+                const y = radiusOffset * Math.sin(angleRad);
+
+                const slot = document.createElement("div");
+                slot.className = "wheel-label-slot";
+                // Position wrapper relative to the absolute center grid point
+                slot.style.transform = `translate(${x}px, ${y}px)`;
+
+                const textNode = document.createElement("div");
+                textNode.className = "upright-text-node";
+                textNode.id = `textNode_${i}`;
+                textNode.innerText = keysList[i];
+                textNode.style.color = getSliceStyle(i).text;
+
+                slot.appendChild(textNode);
+                labelsContainer.appendChild(slot);
+            }
+            updateTextInversionAngles(0); // Initial upright layout alignment pass
+        }
+
+        // Core Anti-Rotation Inversion Matrix: Counter-rotates text nodes to stay completely upright
+        function updateTextInversionAngles(wheelRotationDegrees) {
+            for (let i = 0; i < numSegments; i++) {
+                const textNode = document.getElementById(`textNode_${i}`);
+                if (textNode) {
+                    // Counter-rotate individual text labels by the exact inverse amount of the wheel's spin
+                    textNode.style.transform = `rotate(${-wheelRotationDegrees}deg)`;
+                }
+            }
+        }
+
+        function calculateCurrentSelection(degrees) {
+            let normalized = (degrees % 360);
+            if (normalized < 0) normalized += 360;
+
+            const wedgeDegrees = 360 / numSegments;
+            const winningIndex = Math.floor((360 - normalized) / wedgeDegrees) % numSegments;
+            
+            const winningKey = keysList[winningIndex];
+            const relativeMinor = relativeMinorDictionary[winningKey] || "";
+            
+            resultDiv.innerHTML = `🎉 Key: ${winningKey}`;
+            fifthsInfoDiv.innerHTML = `Relative Minor: [ ${relativeMinor} ]`;
+        }
+
+        // ==================== AUTOMATIC RANDOM SPIN BUTTON ENGINE ====================
+        spinBtn.addEventListener("click", () => {
+            if (isSpinning || isDragging) return;
+            isSpinning = true;
+            
+            // Apply transitional curves concurrently to wheel and dynamic text tracking elements
+            wrapper.style.transition = "transform 5s cubic-bezier(0.1, 0.8, 0.2, 1)";
+            for (let i = 0; i < numSegments; i++) {
+                const node = document.getElementById(`textNode_${i}`);
+                if (node) node.style.transition = "transform 5s cubic-bezier(0.1, 0.8, 0.2, 1)";
+            }
+
+            resultDiv.innerText = "🔑 Finding root note...";
+            fifthsInfoDiv.innerText = ""; 
+
+            const targetIndex = Math.floor(Math.random() * numSegments);
+            const wedgeDegrees = 360 / numSegments;
+            const targetSliceCenterDegrees = (targetIndex * wedgeDegrees) + (wedgeDegrees / 2);
+            const precisionStopDegrees = 360 - targetSliceCenterDegrees;
+            const extraRotations = 360 * (Math.floor(Math.random() * 5) + 6);
+            
+            const currentBaseFullCycles = Math.floor(currentRotationDegrees / 360) * 360;
+            currentRotationDegrees = currentBaseFullCycles + extraRotations + precisionStopDegrees;
+            
+            wrapper.style.transform = `rotate(${currentRotationDegrees}deg)`;
+            updateTextInversionAngles(currentRotationDegrees);
+
+            setTimeout(() => {
+                isSpinning = false;
+                calculateCurrentSelection(currentRotationDegrees);
+            }, 5000);
+        });
+
+        // ==================== MANUAL DRAG & ROTATE MOUSE ENGINE ====================
+        function getMouseAngleRadian(event) {
+            const rect = wrapper.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const mouseX = event.clientX - centerX;
+            const mouseY = event.clientY - centerY;
+            return Math.atan2(mouseY, mouseX);
+        }
+
+        wrapper.addEventListener("mousedown", (e) => {
+            if (isSpinning) return; 
+            isDragging = true;
+            
+            wrapper.style.transition = "none";
+            for (let i = 0; i < numSegments; i++) {
+                const node = document.getElementById(`textNode_${i}`);
+                if (node) node.style.transition = "none"; // Kill delay logic for zero-lag drag updates
+            }
+
+            const mouseAngleRad = getMouseAngleRadian(e);
+            const mouseAngleDeg = mouseAngleRad * (180 / Math.PI);
+            
+            currentAngleOffsetDegrees = currentRotationDegrees - mouseAngleDeg;
+        });
+
+        window.addEventListener("mousemove", (e) => {
+            if (!isDragging) return;
+            
+            const mouseAngleRad = getMouseAngleRadian(e);
+            const mouseAngleDeg = mouseAngleRad * (180 / Math.PI);
+            
+            currentRotationDegrees = mouseAngleDeg + currentAngleOffsetDegrees;
+            wrapper.style.transform = `rotate(${currentRotationDegrees}deg)`;
+            
+            updateTextInversionAngles(currentRotationDegrees);
+            calculateCurrentSelection(currentRotationDegrees);
+        });
+
+        window.addEventListener("mouseup", () => {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            // Re-apply quick transition curves to snap center when dropped
+            wrapper.style.transition = "transform 0.2s ease-out";
+            for (let i = 0; i < numSegments; i++) {
+                const node = document.getElementById(`textNode_${i}`);
+                if (node) node.style.transition = "transform 0.2s ease-out";
+            }
+
+            const wedgeDegrees = 360 / numSegments;
+            let normalized = currentRotationDegrees % 360;
+            if (normalized < 0) normalized += 360;
+            
+            const currentWedgeIndex = Math.floor((360 - normalized) / wedgeDegrees) % numSegments;
+            const alignedTargetDegrees = 360 - ((currentWedgeIndex * wedgeDegrees) + (wedgeDegrees / 2));
+            
+            const baseRotations = Math.floor(currentRotationDegrees / 360) * 360;
+            currentRotationDegrees = baseRotations + alignedTargetDegrees;
+            
+            wrapper.style.transform = `rotate(${currentRotationDegrees}deg)`;
+            updateTextInversionAngles(currentRotationDegrees);
+            calculateCurrentSelection(currentRotationDegrees);
+        });
+
+        // Initialize elements on viewport startup pass
+        drawWheel();
+        createDOMTextLabels();
+    </script>
+</body>
+</html>
