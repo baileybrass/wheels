@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wheels</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            box-sizing: border-box;
+            padding: 20px 10px;
+            user-select: none;
+        }
+
+        h1 {
+            margin: 10px 0 30px 0;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 28px;
+            text-align: center;
+            background: linear-gradient(45deg, #3b82f6, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Responsive Dashboard Container Grid */
+        .dashboard-matrix {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 40px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        /* Individual Wheel Panel Card Workspace */
+        .wheel-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #1a1a1a;
+            border: 1px solid #2d2d2d;
+            border-radius: 16px;
+            padding: 25px 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            flex: 1 1 400px;
+            max-width: 480px;
+            box-sizing: border-box;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 75vw;  
+            height: 75vw; 
+            max-width: 360px; 
+            max-height: 360px;
+            margin-bottom: 25px;
+            margin-top: 40px; 
+        }
+        
+        /* Trumpet Shape Pointer Component */
+        .trumpet-pointer {
+            position: absolute;
+            top: -42px; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 55px;
+            z-index: 20; 
+            filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
+        .trumpet-bell {
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 30px solid #eab308; 
+        }
+        .trumpet-body {
+            width: 8px;
+            height: 18px;
+            background-color: #eab308;
+            margin-top: -2px;
+            position: relative;
+        }
+        .trumpet-valves {
+            position: absolute;
+            top: -5px;
+            left: -4px;
+            width: 16px;
+            height: 4px;
+            background-color: #ca8a04;
+            border-radius: 2px;
+        }
+        
+        .rotating-wheel-wrapper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            border-radius: 50%;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
+            cursor: grab;
+        }
+        .rotating-wheel-wrapper:active {
+            cursor: grabbing;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: block;
+        }
+
+        .center-hub {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 18vw;
+            max-width: 70px;
+            height: 18vw;
+            max-height: 70px;
+            background: radial-gradient(circle, #2d2d2d, #141414);
+            border: 3px solid #ffffff; 
+            border-radius: 50%;
+            z-index: 5;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .hub-logo-img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+
+        .spin-btn {
+            background: linear-gradient(45deg, #1e1b4b, #2563eb, #111827); 
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            padding: 10px 35px;
+            font-size: 16px;
+            font-weight: 900;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+        .spin-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .resultBox {
+            margin-top: 15px;
+            height: 70px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            width: 100%;
+        }
+        .result {
+            font-size: 20px; 
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+        .formula {
+            font-size: 15px; 
+            color: #3b82f6; 
+            font-weight: bold;
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 860px) {
+            .dashboard-matrix {
+                flex-direction: column;
+                align-items: center;
+            }
+            .wheel-panel {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Bailey Brass</h1>
+
+    <div class="dashboard-matrix">
+
+        <div class="wheel-panel">
+            <div class="wheel-container">
+                <div class="trumpet-pointer">
+                    <div class="trumpet-body"><div class="trumpet-valves"></div></div>
+                    <div class="trumpet-bell"></div>
+                </div>
+                <div class="center-hub">
+                    <img src="logo.png" alt="Logo" class="hub-logo-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%220.9em%22 font-size=%2280%22>🎶</text></svg>';">
+                </div>
+                <div id="keyWrapper" class="rotating-wheel-wrapper">
+                    <canvas id="keyCanvas" width="500" height="500"></canvas>
+                </div>
+            </div>
+            <button class="spin-btn" id="keySpinBtn">Spin for Key</button>
+            <div class="resultBox">
+                <div id="keyResult" class="result">Key Wheel Ready!</div>
+                <div id="keyFormula" class="formula"></div>
+            </div>
+        </div>
+
+        <div class="wheel-panel">
+            <div class="wheel-container">
+                <div class="trumpet-pointer">
+                    <div class="trumpet-body"><div class="trumpet-valves"></div></div>
+                    <div class="trumpet-bell"></div>
+                </div>
+                <div class="center-hub">
+                    <img src="logo.png" alt="Logo" class="hub-logo-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%220.9em%22 font-size=%2280%22>🎺</text></svg>';">
+                </div>
+                <div id="scaleWrapper" class="rotating-wheel-wrapper">
+                    <canvas id="scaleCanvas" width="500" height="500"></canvas>
+                </div>
+            </div>
+            <button class="spin-btn" id="scaleSpinBtn">Spin for Scale</button>
+            <div class="resultBox">
+                <div id="scaleResult" class="result">Scale Wheel Ready!</div>
+                <div id="scaleFormula" class="formula"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ------------------ DICTIONARIES & PARAMETERS ------------------
+        const keyData = ["C", "G", "D", "A", "E", "B", "F♯ / G♭", "D♯ / E♭", "A♭", "E♭", "B♭", "F"];
+        const keyFormulas = {
+            "C": "Natural (No Sharps or Flats)", "G": "1 Sharp (F♯)", "D": "2 Sharps (F♯, C♯)",
+            "A": "3 Sharps (F♯, C♯, G♯)", "E": "4 Sharps (F♯, C♯, G♯, D♯)", "B": "5 Sharps (F♯, C♯, G♯, D♯, A♯)",
+            "F♯ / G♭": "6 Sharps (F♯...) or 6 Flats (B♭...)", "D♯ / E♭": "5 Flats (B♭...)", "A♭": "4 Flats (B♭, E♭, A♭, D♭)",
+            "E♭": "3 Flats (B♭, E♭, A♭)", "B♭": "2 Flats (B♭, E♭)", "F": "1 Flat (B♭)"
+        };
+
+        const scaleData = ["Pentatonic", "Major", "Melodic Minor", "Harmonic Minor", "Natural Minor"];
+        const scaleFormulas = {
+            "Pentatonic": "1, 2, 3, 5, 6",
+            "Major": "1, 2, 3, 4, 5, 6, 7",
+            "Melodic Minor": "1, 2, ♭3, 4, 5, 6, 7",
+            "Harmonic Minor": "1, 2, ♭3, 4, 5, ♭6, 7",
+            "Natural Minor": "1, 2, ♭3, 4, 5, ♭6, ♭7"
+        };
+
+        function getSliceStyle(index) {
+            const pattern = index % 3;
+            if (pattern === 0) return { bg: "#0f172a", text: "#ffffff" }; 
+            if (pattern === 1) return { bg: "#f8fafc", text: "#0f172a" }; 
+            return { bg: "#2563eb", text: "#ffffff" }; 
+        }
+
+        // ------------------ DUAL DATA STATE CONTROL OBJECTS ------------------
+        const keyWheel = {
+            list: keyData, dict: keyFormulas, numSegs: keyData.length, segAngle: (2 * Math.PI) / keyData.length,
+            canvas: document.getElementById("keyCanvas"), ctx: document.getElementById("keyCanvas").getContext("2d"),
+            wrapper: document.getElementById("keyWrapper"), spinBtn: document.getElementById("keySpinBtn"),
+            resDiv: document.getElementById("keyResult"), formDiv: document.getElementById("keyFormula"),
+            rad: 0, spinning: false, dragging: false, startAngle: 0, textModifier: 0.72, fontSize: "bold 16px"
+        };
+
+        const scaleWheel = {
+            list: scaleData, dict: scaleFormulas, numSegs: scaleData.length, segAngle: (2 * Math.PI) / scaleData.length,
+            canvas: document.getElementById("scaleCanvas"), ctx: document.getElementById("scaleCanvas").getContext("2d"),
+            wrapper: document.getElementById("scaleWrapper"), spinBtn: document.getElementById("scaleSpinBtn"),
+            resDiv: document.getElementById("scaleResult"), formDiv: document.getElementById("scaleFormula"),
+            rad: 0, spinning: false, dragging: false, startAngle: 0, textModifier: 0.62, fontSize: "bold 18px"
+        };
+
+        // ------------------ UNIVERSAL CORE RENDER PASS ------------------
+        function drawWheel(wObj) {
+            const ctx = wObj.ctx;
+            const canvas = wObj.canvas;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const radius = canvas.width / 2;
+
+            for (let i = 0; i < wObj.numSegs; i++) {
+                const angle = (i * wObj.segAngle) - (Math.PI / 2) + wObj.rad;
+                const style = getSliceStyle(i);
+                ctx.beginPath();
+                ctx.fillStyle = style.bg;
+                ctx.moveTo(radius, radius);
+                ctx.arc(radius, radius, radius, angle, angle + wObj.segAngle);
+                ctx.lineTo(radius, radius);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.strokeStyle = "#121212";
+                ctx.lineWidth = 3;
+                ctx.moveTo(radius, radius);
+                ctx.lineTo(radius + radius * Math.cos(angle), radius + radius * Math.sin(angle));
+                ctx.stroke();
+            }
+
+            for (let i = 0; i < wObj.numSegs; i++) {
+                const style = getSliceStyle(i);
+                const midAngle = (i * wObj.segAngle) - (Math.PI / 2) + (wObj.segAngle / 2) + wObj.rad;
+                
+                const textX = radius + (radius * wObj.textModifier) * Math.cos(midAngle);
+                const textY = radius + (radius * wObj.textModifier) * Math.sin(midAngle);
+                
+                ctx.save();
+                ctx.translate(textX, textY);
+                ctx.rotate(0); 
+                ctx.fillStyle = style.text;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.font = `${wObj.fontSize} 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
+                ctx.fillText(wObj.list[i], 0, 0);
+                ctx.restore();
+            }
+
+            ctx.beginPath();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 5;
+            ctx.arc(radius, radius, radius - 2, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+
+        function evaluateSelection(wObj, labelPrefix) {
+            let deg = wObj.rad * (180 / Math.PI);
+            let normalized = (deg % 360);
+            if (normalized < 0) normalized += 360;
+
+            const wedgeDegrees = 360 / wObj.numSegs;
+            const winner = Math.floor((360 - normalized) / wedgeDegrees) % wObj.numSegs;
+            
+            const selection = wObj.list[winner];
+            const formula = wObj.dict[selection] || "";
+            
+            wObj.resDiv.innerHTML = `🎉 ${labelPrefix}: ${selection}`;
+            wObj.formDiv.innerHTML = labelPrefix === "Key" ? formula : `Formula: [ ${formula} ]`;
+        }
+
+        // ------------------ SPIN ENGINE DECLARATION ------------------
+        function initSpinEngine(wObj, prefixText) {
+            if (wObj.spinning || wObj.dragging) return;
+            wObj.spinning = true;
+            wObj.resDiv.innerText = "🎼 Spinning...";
+            wObj.formDiv.innerText = "";
+
+            const targetIndex = Math.floor(Math.random() * wObj.numSegs);
+            const wedgeDegrees = 360 / wObj.numSegs;
+            const targetSliceCenterDegrees = (targetIndex * wedgeDegrees) + (wedgeDegrees / 2);
+            const precisionStopDegrees = 360 - targetSliceCenterDegrees;
+            const extraRotations = 360 * (Math.floor(Math.random() * 3) + 4); 
+            
+            const targetRadians = (extraRotations + precisionStopDegrees) * (Math.PI / 180);
+            const startRad = wObj.rad;
+            const deltaRad = targetRadians - (startRad % (2 * Math.PI)) + (2 * Math.PI * 2); 
+            
+            const duration = 5000;
+            const startTime = performance.now();
+
+            function animate(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easedProgress = 1 - Math.pow(1 - progress, 3); 
+                
+                wObj.rad = startRad + deltaRad * easedProgress;
+                drawWheel(wObj);
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    wObj.spinning = false;
+                    evaluateSelection(wObj, prefixText);
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // ------------------ UNIFIED DRAG PHYSICS MANAGEMENT ------------------
+        function getUnifiedAngle(wObj, event) {
+            const rect = wObj.wrapper.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+            return Math.atan2(clientY - centerY, clientX - centerX);
+        }
+
+        function configureDragPointers(wObj, targetWrapper, prefixText) {
+            function down(e) {
+                if (wObj.spinning) return;
+                wObj.dragging = true;
+                wObj.startAngle = getUnifiedAngle(wObj, e) - wObj.rad;
+            }
+            function move(e) {
+                if (!wObj.dragging) return;
+                if (e.cancelable) e.preventDefault();
+                wObj.rad = getUnifiedAngle(wObj, e) - wObj.startAngle;
+                drawWheel(wObj);
+                evaluateSelection(wObj, prefixText);
+            }
+            function up() {
+                if (!wObj.dragging) return;
+                wObj.dragging = false;
+
+                const wedgeSizeRad = (2 * Math.PI) / wObj.numSegs;
+                let normalized = wObj.rad % (2 * Math.PI);
+                if (normalized < 0) normalized += (2 * Math.PI);
+                
+                const currentWedgeIndex = Math.floor(((2 * Math.PI) - normalized) / wedgeSizeRad) % wObj.numSegs;
+                const alignedTargetRadians = (2 * Math.PI) - ((currentWedgeIndex * wedgeSizeRad) + (wedgeSizeRad / 2));
+                const baseRotations = Math.floor(wObj.rad / (2 * Math.PI)) * (2 * Math.PI);
+                
+                wObj.rad = baseRotations + alignedTargetRadians;
+                drawWheel(wObj);
+                evaluateSelection(wObj, prefixText);
+            }
+
+            targetWrapper.addEventListener("mousedown", down);
+            window.addEventListener("mousemove", move);
+            window.addEventListener("mouseup", up);
+
+            targetWrapper.addEventListener("touchstart", down, { passive: false });
+            window.addEventListener("touchmove", move, { passive: false });
+            window.addEventListener("touchend", up);
+        }
+
+        // ------------------ INITIALIZATION AND STARTUP ------------------
+        keyWheel.spinBtn.addEventListener("click", () => initSpinEngine(keyWheel, "Concert Key"));
+        scaleWheel.spinBtn.addEventListener("click", () => initSpinEngine(scaleWheel, "Selected"));
+
+        configureDragPointers(keyWheel, keyWheel.wrapper, "Concert Key");
+        configureDragPointers(scaleWheel, scaleWheel.wrapper, "Selected");
+
+        drawWheel(keyWheel);
+        drawWheel(scaleWheel);
+    </script>
+</body>
+</html>
