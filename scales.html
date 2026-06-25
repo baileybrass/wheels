@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bailey Brass Studio - Mobile Scale Roulette</title>
+    <title>Scale Roulette</title>
     <style>
         body {
             background-color: #121212;
@@ -116,7 +116,7 @@
             width: 50vw; 
             max-width: 160px;
             height: 40px;
-            margin-left: -80vw;
+            margin-left: -25vw;
             margin-top: -20px;
             display: flex;
             align-items: center;
@@ -126,7 +126,7 @@
         
         /* Scaled un-bolded font profile adjusted for mobile viewport density scales */
         .upright-text-node {
-            font-size: 16px; /* Font scales responsively down on smaller phone displays */
+            font-size: 4vw; /* Font scales responsively down on smaller phone displays */
             @media (min-width: 480px) {
                 font-size: 20px; /* Settles into baseline size rules on tablets and laptop monitors */
             }
@@ -238,7 +238,7 @@
     <button class="spin-btn" id="spinBtn">Spin</button>
     
     <div id="resultBox">
-        <div id="result">Ready for Stream</div>
+        <div id="result">Ready!</div>
         <div id="formula"></div>
     </div>
 
@@ -375,7 +375,7 @@
                 if (node) node.style.transition = "transform 5s cubic-bezier(0.1, 0.8, 0.2, 1)";
             }
 
-            resultDiv.innerText = "🎼 Shuffling theory options...";
+            resultDiv.innerText = "🎼 Shuffling scale options...";
             formulaDiv.innerText = ""; 
 
             const targetIndex = Math.floor(Math.random() * numSegments);
